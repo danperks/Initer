@@ -1,6 +1,12 @@
-# Initer - Your favourite project initaliser
+# Initer - Your new favourite coding productivity tool
 
-Initer is a super simple, but feature rich script you can run to setup a new GitHub or Heroku remote (if you want more, make an issue for it).
+Initer is a super simple, but feature rich script to help make you more productive when starting new projects.
+The premise is a template system, that copies code templates into new directories for you to begin coding in straight away.
+
+Let's say your an Electron expert and had a base set of files and directories that you start with for all your Electron apps. Instead of copying those files, initalising the Git repo, making a GitHub or Heroku repo, creating a local remote and pushing your first commit, this tool does that all in one simple line. 
+
+With customizable console output, post-init scripting and an easy to modify source code, this is perfect for any level of programming ability. 
+Got a suggestion or improvement, make an Issue and I'll see what I can do :)
 
 ## Instalation
 
