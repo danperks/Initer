@@ -3,6 +3,8 @@ import os
 import webbrowser
 from urllib.request import urlopen
 import subprocess
+import time
+import shutil
 from distutils.dir_util import copy_tree
 
 def getPath():
@@ -46,45 +48,53 @@ def printHelp():
             """)
     
 def install():
-    print("\n"*60)
-    changes = False
-    print("INITER - INSTALL/FIX")
-    print("This option will install or fix the Initer directories")
-    print("")
-    path = str(getPath()).strip()
-    if not os.path.isdir(path):
-        os.mkdir(path)
-        print("Base folder created")
-        changes = True
-    folder = path + r"\templates"
-    creds = path  + r"\creds.ini"
-    glob = path  + r"\global.bat"
-    if not os.path.isdir(folder):
-        os.mkdir(folder)
-        print("Template folder created")
-        changes = True
-    if not os.path.isfile(creds):
-        with open(creds, "w+") as f:
-            f.write("this is the creds file")
-        print("Credentials file created")
-        changes = True
-    if not os.path.isfile(glob):
-        with open(glob, "w+") as g:
-            g.write(":: This file runs after each init - add your post-init code below\n\n")
-        print("Global.bat file created")
-        changes = True
-    if not os.path.isdir(folder + r"\flask"):
-        os.mkdir(folder + r"\flask")
-        with open(folder + r"\flask\hello.py", "w") as f:
-            text = (urlopen(r"https://raw.githubusercontent.com/miguelgrinberg/flask-examples/master/01-hello-world/hello.py").read().decode('utf-8'))
-            f.write(text)
-        changes = True
-        print("Example template created")
-    if changes:
-        print("Installation Complete!")
+    print("initer: message: initer is about to be (re)installed to: " + getPath())
+    sure = input("initer: warning: are you sure you want to do this (y/n): ")
+    if sure.lower() == "y":
+        path = str(getPath()).strip()
+        if not os.path.isdir(path):
+            os.mkdir(path)
+            changes = True
+        folder = path + r"\templates"
+        creds = path  + r"\creds.ini"
+        glob = path  + r"\global.bat"
+        if not os.path.isdir(folder):
+            os.mkdir(folder)
+            changes = True
+        if not os.path.isfile(creds):
+            with open(creds, "w+") as f:
+                f.write("this is the creds file")
+            changes = True
+        if not os.path.isfile(glob):
+            with open(glob, "w+") as g:
+                g.write(":: This file runs after each init - add your post-init code below\n\n")
+            changes = True
+        if not os.path.isdir(folder + r"\flask"):
+            os.mkdir(folder + r"\flask")
+            with open(folder + r"\flask\hello.py", "w") as f:
+                text = (urlopen(r"https://raw.githubusercontent.com/miguelgrinberg/flask-examples/master/01-hello-world/hello.py").read().decode('utf-8'))
+                f.write(text)
+            changes = True
+        if changes:
+            input("initer: message: initer was (re)installed successfully")
+        else:
+            input("initer: message: initer was already installed, no changes were made")
     else:
-        print("Initer was already installed, so no changes were made")
+        input("initer: message: initer was not installed")
     
+def uninstall():
+    print("initer: warning: initer is about to be uninstalled, this will delete all your projects and credentails")
+    sure = input("initer: warning: are you sure you want to do this (y/n): ")
+    if sure.lower() == "y":
+        path = str(getPath()).strip()
+        if os.path.isdir(path):
+            shutil.rmtree(path)
+            print("initer: message: initer is now uninstalled, delete initer.exe to complete remove Initer")
+        else:
+            print("initer: message: initer was not yet installed, delete initer.exe to complete remove Initer")
+    else:
+        input("initer: message: initer was not uninstalled")
+
 
 def openTemps():
     path = str(getPath()).strip()
@@ -150,6 +160,7 @@ def init():
         print("initer: error: no arguments were given")
         return []
     elif args[0] == "-i" or args[0] == "--install": install()
+    elif args[0] == "-u" or args[0] == "--uninstall": uninstall()
     elif args[0] == "-t" or args[0] == "--temps": openTemps()
     elif args[0] == "-c" or args[0] == "--creds": openCreds()
     elif args[0] == "-d" or args[0] == "--dir": openDir()
@@ -174,10 +185,11 @@ if args != []:
     print("args", args)
     print("")
     name = args[0]
+    name = name.replace("/","\\")
     template = args[1]
     service = ""
     output = True
-    if not os.path.isfile(getPath() + r"\.noout"):
+    if os.path.isfile(getPath() + r"\.noout"):
         output = False
     if len(args) > 2:
         if checkGit():
@@ -191,7 +203,7 @@ if args != []:
         if os.path.isdir(path):
             print("initer: error: folder '" + name + "' already exists here")
         else:
-            os.mkdir(path)
+            os.makedirs(path)
             if output: print("initer: message: folder generated successfully")
             if not os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\.nogit"):
                 result = subprocess.Popen(['git', 'init'], cwd=path, stdout=subprocess.PIPE)
@@ -199,7 +211,8 @@ if args != []:
                 if result[:12] == "Initialized ":
                     if output: print("initer: message: git initalised successfully")
                 else:
-                    print("initer: error: failed to initalise the git repository")
+                    print("initer: error: failed to initalise the git repository - git will be ignored")
+                    service == ""
             else:
                 if output: print("initer: message: no local git created as per .nogit file")
             copy_tree((getPath() + r"\templates\ ".strip() + template), path)
@@ -210,5 +223,11 @@ if args != []:
                     print("initer: error: online git intergration not yet implemented")
                 else:
                     if output: print("initer: message: template '" + template + "' successfully copied")
+           
+            command = 'start cmd.exe /k "' + getPath() + r'\global.bat"' 
+            dir = os.getcwd() + r"\ ".strip() + name
+            os.chdir(dir)
+            os.system(command)
+            
     else:
         print("initer: error: '" + template + "' is not a valid template - do 'initer -t' to create it")
