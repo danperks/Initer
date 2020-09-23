@@ -8,8 +8,15 @@ import shutil
 import zipfile
 from distutils.dir_util import copy_tree
 
+def connected():
+    try:
+        urlopen('http://8.8.8.8', timeout=1)
+        return True
+    except: 
+        return False
+
 def printVersion():
-    print("Initer Alpha v0.1")
+    print("Initer Alpha v0.2")
 
 def getPath():
     return (os.getenv('LOCALAPPDATA') + r"\Initer")
@@ -80,7 +87,10 @@ def install(): # add icons for inits: https://docs.microsoft.com/en-us/windows/w
         if not os.path.isdir(folder + r"\flask"):
             os.mkdir(folder + r"\flask")
             with open(folder + r"\flask\hello.py", "w") as f:
-                text = (urlopen(r"https://raw.githubusercontent.com/miguelgrinberg/flask-examples/master/01-hello-world/hello.py").read().decode('utf-8'))
+                if connected:
+                    text = (urlopen(r"https://raw.githubusercontent.com/miguelgrinberg/flask-examples/master/01-hello-world/hello.py").read().decode('utf-8'))
+                else:
+                    text = 'print("Hello World!")'
                 f.write(text)
             changes = True
         if changes:
@@ -198,7 +208,7 @@ def runCommand(args):
     elif args[1] == "uninstall":
         uninstall()
     elif args[1] == "open":
-        if args < 2:
+        if len(args) < 2:
             openDir()
         elif args[2] == "base":
             openDir()
@@ -278,10 +288,12 @@ if args != []:
                 else:
                     if output: print("initer: message: template '" + template + "' successfully copied")
             if not os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\.noglobal"):
-                command = 'start cmd.exe /k "' + getPath() + r'\global.bat"' 
+                command = getPath() + r'\global.bat"' 
                 dir = os.getcwd() + r"\ ".strip() + name
                 os.chdir(dir)
                 os.system(command)
+            if os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\init.bat"):
+                os.system(getPath() + r"\templates\ ".strip() + template + r"\init.bat")
             else:
                 if output: print("initer: message: global.bat creaignoredted as per .noglobal file")
     else:
