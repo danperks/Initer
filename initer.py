@@ -5,7 +5,11 @@ from urllib.request import urlopen
 import subprocess
 import time
 import shutil
+import zipfile
 from distutils.dir_util import copy_tree
+
+def printVersion():
+    print("Initer Alpha v0.1")
 
 def getPath():
     return (os.getenv('LOCALAPPDATA') + r"\Initer")
@@ -19,7 +23,7 @@ def checkGit():
 
 def getUsage(full=False):
     if full:
-        return "usage: initer [-l] [-h] [-i] [-t] [-c] [-v] name template {github,heroku}"
+        return "usage: initer [-l] [-x] [-h] [-v] name template {github,heroku}"
     else:
         return "usage: initer [--help] name template {github,heroku}"
 
@@ -36,18 +40,22 @@ def printHelp():
             {github,heroku}    The service to initalise a repository and generate a remote for
 
             optional arguments:
-            -h, --help         Show this help message and exit
-            -l, --list         Lists the available templates and credentials
-            -i, --install      (Re)install Initer without overriding any templates or credentials
-            -u, --uninstall    Delete all the files Initer uses
-            -t, --temps        Opens the templates folder
-            -c, --creds        Opens the credentials.ini file
-            -v, --version      Prints the current version
+            - -l, --list      Lists the available templates and credentials
+            - -x, --command     Runs a specified command, see commands section
+            - -h, --help     Show this help message and exit
+            - -v, --version   Outputs the latest version to the terminal
+            
+            commands - for use with -x:
+            - `open {base, temp[lates], global, cred[entials]}` - Opens the relevant folder/file, defaults to base
+            - `import [.init file location]` - Import a template from an .init file
+            - `export [name] {path}` - Export a template in a .init file, defaults to deskop if no path is provided
+            - `install` - Installs the necessary folders and files for Initer to work
+            - `uninstall` - Removes all of Initer's program files, does not delete Initer.exe
 
             For full usage instructions, go to https://github.com/danperks/initer
             """)
     
-def install():
+def install(): # add icons for inits: https://docs.microsoft.com/en-us/windows/win32/shell/how-to-assign-a-custom-icon-to-a-file-type
     print("initer: message: initer is about to be (re)installed to: " + getPath())
     sure = input("initer: warning: are you sure you want to do this (y/n): ")
     if sure.lower() == "y":
@@ -153,20 +161,69 @@ def openCreds():
         print("initer: error: Initer is not installed correctly. Run 'initer --install' and try again")
     return []
 
+def runCommand(args):
+    if args[1] == "exit":
+        return []
+    elif args[1] == "import":
+        archive = args[2]
+        if os.path.isfile(archive):
+            if archive[-5:] == ".init":
+                name = archive.split(r"\ ".strip())[-1].split(".")[0]
+                if name in next(os.walk(str(getPath()).strip() + r"\templates"))[1]:
+                    print("initer: error: template " + name + " already exists")
+                else:
+                    with zipfile.ZipFile(archive, 'r') as zip_ref:
+                        outpath = getPath() + r"\templates\ " .strip() + str(name) + r"\ ".strip()
+                        zip_ref.extractall(outpath)
+                    print("initer: message: template " + name + " successfully imported")
+            else:
+                print("initer: error: file to import is not a .init archive")
+        else:
+            print("initer: error: file at path '" + archive + "' does not exsist")
+    elif args[1] == "export":
+        name = args[2]
+        path = (getPath() + r"\templates\ ".strip() + name)
+        print(path)
+        if os.path.isdir(path):
+            print()
+            zipf = zipfile.ZipFile((os.path.join(os.environ["HOMEPATH"], "Desktop") + r"\ ".strip() + name + '.init'), 'w', zipfile.ZIP_DEFLATED)
+            for x in os.walk(path):
+                for file in x[2]:
+                    zipf.write(os.path.join(x[0], file), arcname=file)
+            zipf.close() 
+        else:
+            print("initer: error: '" + name + "' is not a valid template")
+    elif args[1] == "install":
+        install()
+    elif args[1] == "uninstall":
+        uninstall()
+    elif args[1] == "open":
+        if args < 2:
+            openDir()
+        elif args[2] == "base":
+            openDir()
+        elif args[2] == "temp" or args[2] == "templates" :
+            openTemps()
+        elif args[2] == "global":
+            openGlobal()
+        elif args[2] == "cred" or args[2] == "credentials":
+            openCreds()
+        else:
+            print("initer: error: unknown file/folder, check your syntax and try again")
+    else:
+        print("initer: error: unknown command, check your syntax and try again")
+    
+
 def init():
     args = sys.argv[1:]
     if args == []:
         print(getUsage())
         print("initer: error: no arguments were given")
         return []
-    elif args[0] == "-i" or args[0] == "--install": install()
-    elif args[0] == "-u" or args[0] == "--uninstall": uninstall()
-    elif args[0] == "-t" or args[0] == "--temps": openTemps()
-    elif args[0] == "-c" or args[0] == "--creds": openCreds()
-    elif args[0] == "-d" or args[0] == "--dir": openDir()
-    elif args[0] == "-g" or args[0] == "--gloabl": openGlobal()
+    elif args[0] == "-v" or args[0] == "--version": printVersion()
     elif args[0] == "-l" or args[0] == "--list": listOptions()
     elif args[0] == "-h" or args[0] == "--help": printHelp()
+    elif args[0] == "-x" or args[0] == "--command": runCommand(args)
     else:
         if len(args) == 1:
             print(getUsage())
@@ -182,10 +239,7 @@ def init():
     
 args = init()
 if args != []:
-    print("args", args)
-    print("")
-    name = args[0]
-    name = name.replace("/","\\")
+    name = args[0].replace("/","\\")
     template = args[1]
     service = ""
     output = True
@@ -223,11 +277,21 @@ if args != []:
                     print("initer: error: online git intergration not yet implemented")
                 else:
                     if output: print("initer: message: template '" + template + "' successfully copied")
-           
-            command = 'start cmd.exe /k "' + getPath() + r'\global.bat"' 
-            dir = os.getcwd() + r"\ ".strip() + name
-            os.chdir(dir)
-            os.system(command)
-            
+            if not os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\.noglobal"):
+                command = 'start cmd.exe /k "' + getPath() + r'\global.bat"' 
+                dir = os.getcwd() + r"\ ".strip() + name
+                os.chdir(dir)
+                os.system(command)
+            else:
+                if output: print("initer: message: global.bat creaignoredted as per .noglobal file")
     else:
         print("initer: error: '" + template + "' is not a valid template - do 'initer -t' to create it")
+        
+        
+# todo:
+# - add github / heroku integration
+# - fix global.bat leaving cmd open
+# - add 'init.bat' running 
+# - add icons for .init package?
+# - make compile script - minify, compile to one file, automated testing?
+# - clean code - more functions, less spag bol code
