@@ -8,11 +8,24 @@ import shutil
 import zipfile
 from distutils.dir_util import copy_tree
 
+ver = "0.1"
+
+
+def checkUpdate():
+    if connected():
+        latest = urlopen("https://raw.githubusercontent.com/danperks/Initer/master/version").read().decode()
+        if latest != ver:
+            print("initer: message: initer has a newer version, update to " + latest + "at https://github.com/danperks/Initer")
+        else:
+            print("latest")
+    else:
+        print("initer: warning: initer could not check for updates, created a file named .noupdate in the base directory to stop update checks")
+
 def connected():
     try:
-        urlopen('http://8.8.8.8', timeout=1)
+        urlopen('https://raw.githubusercontent.com/danperks/Initer/master/version', timeout=1)
         return True
-    except: 
+    except:
         return False
 
 def printVersion():
@@ -298,6 +311,9 @@ if args != []:
                 if output: print("initer: message: global.bat creaignoredted as per .noglobal file")
     else:
         print("initer: error: '" + template + "' is not a valid template - do 'initer -t' to create it")
+        
+if not os.path.isfile(getPath() + r"\.noglobal"):
+    checkUpdate()
         
         
 # todo:
