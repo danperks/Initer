@@ -1,3 +1,5 @@
+rem Don't use, flags antivirus when downloading exe
+
 @echo off
 where initer >nul 2> nul
 IF %ERRORLEVEL% NEQ 0 (
@@ -18,7 +20,8 @@ IF %ERRORLEVEL% NEQ 0 (
                 ) else (
                         echo You do not have the latest version
                         echo Starting Update...
-                        powershell -noprofile -command "&{ start-process powershell -ArgumentList '-noprofile -command "wget https://github.com/danperks/Initer/raw/master/release/initer.exe -OutFile %localappdata%\Initer\initer"' -verb RunAs}"
+                        powershell -command "start-process -filepath powershell.exe -argumentlist @('-command','Add-MpPreference -ExclusionPath “$env:LOCALAPPDATA\Initer\initer”) -verb runas"
+                        powershell -command "start-process -filepath powershell.exe -argumentlist @('-command','wget https://github.com/danperks/Initer/raw/master/release/initer.exe -OutFile $env:LOCALAPPDATA\Initer\initer\initer.exe') -verb runas"
                         echo Update Complete!
                         )
 )
