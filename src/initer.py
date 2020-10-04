@@ -8,16 +8,13 @@ import shutil
 import zipfile
 from distutils.dir_util import copy_tree
 
-ver = "0.1"
-
+ver = "0.2"
 
 def checkUpdate():
     if connected():
         latest = urlopen("https://raw.githubusercontent.com/danperks/Initer/master/version").read().decode()
         if latest != ver:
-            print("initer: message: initer has a newer version, update to " + latest + "at https://github.com/danperks/Initer")
-        else:
-            print("latest")
+            print("initer: message: initer has a newer version, update to " + latest + " at https://github.com/danperks/Initer")
     else:
         print("initer: warning: initer could not check for updates, created a file named .noupdate in the base directory to stop update checks")
 
@@ -29,7 +26,7 @@ def connected():
         return False
 
 def printVersion():
-    print("Initer Alpha v0.2")
+    print(ver)
 
 def getPath():
     return (os.getenv('LOCALAPPDATA') + r"\Initer")
@@ -75,7 +72,7 @@ def printHelp():
             For full usage instructions, go to https://github.com/danperks/initer
             """)
     
-def install(): # add icons for inits: https://docs.microsoft.com/en-us/windows/win32/shell/how-to-assign-a-custom-icon-to-a-file-type
+def install():
     print("initer: message: initer is about to be (re)installed to: " + getPath())
     sure = input("initer: warning: are you sure you want to do this (y/n): ")
     if sure.lower() == "y":
@@ -112,7 +109,10 @@ def install(): # add icons for inits: https://docs.microsoft.com/en-us/windows/w
             input("initer: message: initer was already installed, no changes were made")
     else:
         input("initer: message: initer was not installed")
-    
+
+def upgrade():
+    pass # get update script online and run
+
 def uninstall():
     print("initer: warning: initer is about to be uninstalled, this will delete all your projects and credentails")
     sure = input("initer: warning: are you sure you want to do this (y/n): ")
@@ -218,6 +218,8 @@ def runCommand(args):
             print("initer: error: '" + name + "' is not a valid template")
     elif args[1] == "install":
         install()
+    elif args[1] == "upgrade":
+        upgrade()
     elif args[1] == "uninstall":
         uninstall()
     elif args[1] == "open":
@@ -305,10 +307,10 @@ if args != []:
                 dir = os.getcwd() + r"\ ".strip() + name
                 os.chdir(dir)
                 os.system(command)
-            if os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\init.bat"):
-                os.system(getPath() + r"\templates\ ".strip() + template + r"\init.bat")
             else:
                 if output: print("initer: message: global.bat creaignoredted as per .noglobal file")
+            if os.path.isfile(getPath() + r"\templates\ ".strip() + template + r"\init.bat"):
+                    os.system(getPath() + r"\templates\ ".strip() + template + r"\init.bat")
     else:
         print("initer: error: '" + template + "' is not a valid template - do 'initer -t' to create it")
         
@@ -318,8 +320,3 @@ if not os.path.isfile(getPath() + r"\.noglobal"):
         
 # todo:
 # - add github / heroku integration
-# - fix global.bat leaving cmd open
-# - add 'init.bat' running 
-# - add icons for .init package?
-# - make compile script - minify, compile to one file, automated testing?
-# - clean code - more functions, less spag bol code
