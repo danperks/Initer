@@ -8,7 +8,7 @@ import shutil
 import zipfile
 from distutils.dir_util import copy_tree
 
-ver = "0.2"
+ver = "0.3"
 
 def checkUpdate():
     if connected():

@@ -1,4 +1,4 @@
-pyminifier -o initer-mini.py initer.py
+pyminifier -o initer-mini.py src\initer.py
 pyinstaller --onefile initer-mini.py
 del initer-mini.py
 del /s /q build\
